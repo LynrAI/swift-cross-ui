@@ -89,11 +89,16 @@ extension StyledShape {
             storage.pointsChanged = false
 
             backend.setSize(of: widget, to: size.size)
+
+            // Resolve semantic colors based on the current color scheme
+            let resolvedStrokeColor = (strokeColor ?? .clear).resolve(in: environment.colorScheme)
+            let resolvedFillColor = (fillColor ?? .clear).resolve(in: environment.colorScheme)
+
             backend.renderPath(
                 backendPath,
                 container: widget,
-                strokeColor: strokeColor ?? .clear,
-                fillColor: fillColor ?? .clear,
+                strokeColor: resolvedStrokeColor,
+                fillColor: resolvedFillColor,
                 overrideStrokeStyle: strokeStyle
             )
         }
