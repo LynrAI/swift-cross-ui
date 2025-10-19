@@ -57,7 +57,9 @@ public struct EnvironmentValues {
     /// neccessarily have to obey this when ``Environment/foregroundColor``
     /// is `nil`.
     public var suggestedForegroundColor: Color {
-        foregroundColor ?? colorScheme.defaultForegroundColor
+        let color = foregroundColor ?? colorScheme.defaultForegroundColor
+        // Resolve semantic colors based on the current color scheme
+        return color.resolve(in: colorScheme)
     }
 
     /// Called when a text field gets submitted (usually due to the user

@@ -1,3 +1,11 @@
+/// Semantic color types that adapt to the current color scheme.
+package enum SemanticColorType: Sendable {
+    case primary
+    case secondary
+    case tertiary
+    case quaternary
+}
+
 /// An RGBA representation of a color.
 public struct Color: Sendable {
     /// The red component (from 0 to 1).
@@ -8,6 +16,9 @@ public struct Color: Sendable {
     public var blue: Float
     /// The alpha component (from 0 to 1).
     public var alpha: Float
+
+    /// If this color is semantic, it will adapt to the color scheme.
+    package var semantic: SemanticColorType?
 
     /// Creates a color from its components with values between 0 and 1.
     public init(
@@ -20,6 +31,27 @@ public struct Color: Sendable {
         self.green = green
         self.blue = blue
         self.alpha = alpha
+        self.semantic = nil
+    }
+
+    /// Creates a semantic color that adapts to the color scheme.
+    package init(semantic: SemanticColorType) {
+        // Initialize with placeholder values - will be resolved based on color scheme
+        self.red = 0
+        self.green = 0
+        self.blue = 0
+        self.alpha = 1
+        self.semantic = semantic
+    }
+
+    /// Resolves this color based on the current color scheme.
+    /// If the color is semantic, returns the appropriate color for the scheme.
+    /// Otherwise, returns the color unchanged.
+    package func resolve(in colorScheme: ColorScheme) -> Color {
+        guard let semantic = semantic else {
+            return self
+        }
+        return colorScheme.color(for: semantic)
     }
 
     /// Multiplies the opacity of the color by the given amount.
@@ -62,6 +94,24 @@ public struct Color: Sendable {
     public static let yellow = Color(1.00, 0.80, 0.00)
     /// Pure white.
     public static let white = Color(1.00, 1.00, 1.00)
+
+    // MARK: - Semantic Colors
+
+    /// The primary foreground color that adapts to the color scheme.
+    /// Black in light mode, white in dark mode.
+    public static let primary = Color(semantic: .primary)
+
+    /// A secondary foreground color that adapts to the color scheme.
+    /// More subdued than primary, useful for secondary text or less important elements.
+    public static let secondary = Color(semantic: .secondary)
+
+    /// A tertiary foreground color that adapts to the color scheme.
+    /// Even more subdued than secondary.
+    public static let tertiary = Color(semantic: .tertiary)
+
+    /// A quaternary foreground color that adapts to the color scheme.
+    /// The most subdued semantic color, useful for placeholder text or disabled states.
+    public static let quaternary = Color(semantic: .quaternary)
 }
 
 extension Color: ElementaryView {
@@ -78,7 +128,9 @@ extension Color: ElementaryView {
     ) -> ViewUpdateResult {
         if !dryRun {
             backend.setSize(of: widget, to: proposedSize)
-            backend.setColor(ofColorableRectangle: widget, to: self)
+            // Resolve semantic colors based on the current color scheme
+            let resolvedColor = self.resolve(in: environment.colorScheme)
+            backend.setColor(ofColorableRectangle: widget, to: resolvedColor)
         }
         return ViewUpdateResult.leafView(
             size: ViewSize(
